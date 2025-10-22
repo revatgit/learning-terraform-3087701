@@ -36,20 +36,25 @@ module "web_vpc" {
   }
 }
 
-resource "aws_instance" "web" {
-  ami           = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
 
+module "autoscaling" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "9.0.2"
+  # insert the 1 required variable here
+  name = "web"
+  min_size = 1
+  max_size = 2
+
+  vpc_zone_identifier = module.web_vpc.public_subnets
+  target_group_arns = module.web_alb.target_group_arns
   vpc_security_group_ids = [module.web_sg.security_group_id ]
 
-  subnet_id = module.web_vpc.public_subnets[0]
+  image_id           = data.aws_ami.app_ami.id
+  instance_type      = var.instance_type
 
-  tags = {
-    Name = "HelloWorld"
-  }
 }
 
-module "alb" {
+module "web_alb" {
   source = "terraform-aws-modules/alb/aws"
 
   name    = "mweb-alb"
@@ -61,35 +66,22 @@ module "alb" {
  
   
 
-  listeners = {
-    ex-http-https-redirect = {
+  http_tcp_listeners = [
+    {
       port     = 80
       protocol = "HTTP"
-      redirect = {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
+      target_group_index = 0
     }
-    ex-https = {
-      port            = 443
-      protocol        = "HTTPS"
-      certificate_arn = "arn:aws:iam::123456789012:server-certificate/test_cert-123456789012"
-
-      forward = {
-        target_group_key = "ex-instance"
-      }
-    }
-  }
+  ]
+  
+  
 
   target_groups = {
-    ex-instance = {
       name_prefix      = "web-"
       protocol         = "HTTP"
       port             = 80
       target_type      = "instance"
-      target_id        = aws_instance.web.id
-    }
+    
   }
 
   tags = {
