@@ -47,7 +47,7 @@ module "autoscaling" {
 
   vpc_zone_identifier = module.web_vpc.public_subnets
   target_group_arns = module.web_alb.target_group_arns
-  vpc_security_group_ids = [module.web_sg.security_group_id ]
+  security_groups  = [module.web_sg.security_group_id ]
 
   image_id           = data.aws_ami.app_ami.id
   instance_type      = var.instance_type
@@ -57,7 +57,7 @@ module "autoscaling" {
 module "web_alb" {
   source = "terraform-aws-modules/alb/aws"
 
-  name    = "mweb-alb"
+  name    = "web-alb"
   vpc_id  = module.web_vpc.vpc_id
 
   subnets =module.web_vpc.public_subnets
