@@ -34,7 +34,7 @@ resource "aws_instance" "web" {
 module "web_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.3.1"
-  name = web-new
+  name = "web-new"
   vpc_id  = data.aws_vpc.default.id
 
   ingress_rules = ["http-80-tcp","https-443-tcp"]
